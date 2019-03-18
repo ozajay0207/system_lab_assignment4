@@ -9,6 +9,8 @@
 
 #define NO_OF_USERS 3
 #define NO_OF_SERVICES 5
+#define TIMING_DATA 100
+#define TIME_STRING_SIZE 100
 #define USER_DATA_SIZE 100
 #define BUFFER_SIZE 10000
 #define PORT 8080 
@@ -54,27 +56,42 @@ void initialize_services(char services[]){
 //SERVICE 1 : ECHO REQUEST REPLY 
 void echo_request_reply(int new_socket){
 
+
 	int read_val;
+	int counter=0;
+	char mssg_buffer[BUFFER_SIZE]="";
 	char data_buffer[BUFFER_SIZE] =""; 
+	char input_string[BUFFER_SIZE]="";
+	char timings[TIMING_DATA][TIME_STRING_SIZE];
 	struct timeval start, stop;
 	double secs = 0;
-	
-	//READ THE FIRST ECHO MESSAGE
-	read_val = read( new_socket , data_buffer, BUFFER_SIZE); 
-
+		
 	//LOOP UNTIL CLIENT SENDS 'N' FOR ECHO MESSAGE
 	while(1){
+
+		strcpy(data_buffer,"1");
+		send(new_socket,data_buffer,BUFFER_SIZE,0);
+		strcpy(data_buffer,"Enter Input String:");
+		send(new_socket,data_buffer,BUFFER_SIZE,0);
+
+		strcpy(data_buffer,"2");
+		send(new_socket,data_buffer,BUFFER_SIZE,0);
+		strcpy(data_buffer,"");
+		read_val = read( new_socket , data_buffer, BUFFER_SIZE ); 
+		printf("Received  First:%s\n",data_buffer);
+		strcpy(input_string,data_buffer);
 
 		//INIT THE TIMER	
 		gettimeofday(&start, NULL);
 
-		//SEND-RECEIVE MESSAGE (1 ROUND)
-		printf("Sending : %s\n",data_buffer);
-		send(new_socket , data_buffer , BUFFER_SIZE , 0 ); 
+		strcpy(data_buffer,"3");
+		send(new_socket,data_buffer,BUFFER_SIZE,0);
+		printf("Sending:%s\n",input_string);
+		send(new_socket,input_string,BUFFER_SIZE,0);
 		strcpy(data_buffer,"");
-		read_val = read( new_socket , data_buffer, BUFFER_SIZE); 
-		printf("Received : %s\n",data_buffer);	
-
+		read_val = read( new_socket , data_buffer, BUFFER_SIZE ); 
+		printf("Received:%s\n",data_buffer);
+		
 		//STOP THE TIMER
 		gettimeofday(&stop, NULL);
 
@@ -82,16 +99,40 @@ void echo_request_reply(int new_socket){
 		secs = (double)(stop.tv_usec - start.tv_usec) / 1000000 + (double)(stop.tv_sec - start.tv_sec);
 		strcpy(data_buffer,"");
 		sprintf(data_buffer,"%f",secs);
-	
-		//SEND THE TIME TO CLIENT FOR STORAGE
-		send(new_socket,data_buffer,BUFFER_SIZE,0);
+		strcpy(timings[counter++],data_buffer);
 		
-		//CHECK FOR NEXT MESSAGE
-		read_val = read( new_socket , data_buffer, BUFFER_SIZE); 
+		strcpy(data_buffer,"1");
+		send(new_socket,data_buffer,BUFFER_SIZE,0);
+		strcpy(data_buffer,"Do you want to continue (y/n):");
+		send(new_socket,data_buffer,BUFFER_SIZE,0);
+
+		strcpy(data_buffer,"2");
+		send(new_socket,data_buffer,BUFFER_SIZE,0);
+		strcpy(data_buffer,"");
+		read_val = read( new_socket , data_buffer, BUFFER_SIZE ); 
+		printf("Client Reply Choice:%s\n",data_buffer);
 
 		//BREAK IF CHOICE IS 'N'
-		if(strcmp(data_buffer,"n")==0)
+		if(strcmp(data_buffer,"n")==0){
+			strcpy(data_buffer,"1");
+			send(new_socket,data_buffer,BUFFER_SIZE,0);
+			strcpy(data_buffer,"Timings:\n");
+			send(new_socket,data_buffer,BUFFER_SIZE,0);
+			for(int i=0;i<counter;i++){
+				//printf("%d : %s\n",(i+1),timings[i]);
+				strcpy(data_buffer,"1");
+				send(new_socket,data_buffer,BUFFER_SIZE,0);	
+				strcpy(data_buffer,"");
+				sprintf(data_buffer,"%d : %s\n",i+1,timings[i]);
+				send(new_socket,data_buffer,BUFFER_SIZE,0);
+			}
+
+
+			strcpy(data_buffer,"999");
+			send(new_socket,data_buffer,BUFFER_SIZE,0);
 			break;	
+
+		}
 	};
 }
 
@@ -107,25 +148,37 @@ void AL_RTT(int new_socket){
 	double secs = 0;
 	double temp_secs = 0;
 
-	//NO. OF BYTES OF MESSAGE TO BE SENT (RECEIVED)
-	strcpy(data_buffer,"");
-	read_val = read( new_socket , data_buffer, BUFFER_SIZE); 
-	sscanf(data_buffer, "%d", &mssg_length); 	
-	printf("No of Bytes Sent:%s\n",data_buffer);
+		strcpy(data_buffer,"1");
+		send(new_socket,data_buffer,BUFFER_SIZE,0);
+		strcpy(data_buffer,"Enter Message Length:");
+		send(new_socket,data_buffer,BUFFER_SIZE,0);
 
-	//NO. OF ITERATIONS TO PERFORM THE SENDING (RECEIVED)
-	strcpy(data_buffer,"");
-	read_val = read( new_socket , data_buffer, BUFFER_SIZE); 			
-	sscanf(data_buffer, "%d", &iterations); 
-	printf("No of Iterations:%d\n",iterations);
+		strcpy(data_buffer,"2");
+		send(new_socket,data_buffer,BUFFER_SIZE,0);
+		strcpy(data_buffer,"");
+		read_val = read( new_socket , data_buffer, BUFFER_SIZE ); 
+		sscanf(data_buffer,"%d",&mssg_length);
+		printf("Message String Length:%d\n",mssg_length);
+
+		strcpy(data_buffer,"1");
+		send(new_socket,data_buffer,BUFFER_SIZE,0);
+		strcpy(data_buffer,"Enter No.of Iterations:");
+		send(new_socket,data_buffer,BUFFER_SIZE,0);
+
+		strcpy(data_buffer,"2");
+		send(new_socket,data_buffer,BUFFER_SIZE,0);
+		strcpy(data_buffer,"");
+		read_val = read( new_socket , data_buffer, BUFFER_SIZE ); 
+		printf("Iterations:%s\n",data_buffer);
+		sscanf(data_buffer,"%d",&iterations);
 
 	//CREATE A DUMMY MESSAGE OF SIZE IN BYTES RECEIVED
 	strcpy(mssg_buffer,"A");
 	for(int i=1;i<mssg_length;i++)
 		strcat(mssg_buffer,"A");
-	strcat(mssg_buffer,"\n");
 	
 	//SEND THE MESSAGE FOR RECEIVED NO. OF ITERATIONS
+	printf("Sending message of %d length for %d iterations...\n",mssg_length,iterations);
 	for(int i=0;i<iterations;i++){
 
 		temp_secs=0;
@@ -134,10 +187,12 @@ void AL_RTT(int new_socket){
 		gettimeofday(&start, NULL);
 
 		//SEND-RECEIVE THE MESSAGE (1 RTT)
-		strcpy(data_buffer,mssg_buffer);	
-		send( new_socket , data_buffer, BUFFER_SIZE,0); 
+		strcpy(data_buffer,"3");
+		send(new_socket,data_buffer,BUFFER_SIZE,0);
+		send(new_socket,mssg_buffer,BUFFER_SIZE,0);
 		strcpy(data_buffer,"");
-		read_val = read(new_socket,data_buffer,BUFFER_SIZE);
+		read_val = read( new_socket , data_buffer, BUFFER_SIZE ); 
+
 		gettimeofday(&stop, NULL);
 
 		//CALCULATE THE TIME IN  MILLISECONDS		
@@ -148,8 +203,13 @@ void AL_RTT(int new_socket){
 	}
 
 	//SEND THE AVERAGE RTT OVER THE ITERATIONS
+	strcpy(data_buffer,"1");
+	send(new_socket,data_buffer,BUFFER_SIZE,0);	
 	strcpy(data_buffer,"");
-	sprintf(data_buffer,"%f",secs/iterations);
+	sprintf(data_buffer,"RTT Time for %d iterations is : %f\n",iterations,secs/iterations);
+	send(new_socket,data_buffer,BUFFER_SIZE,0);
+
+	strcpy(data_buffer,"999");
 	send(new_socket,data_buffer,BUFFER_SIZE,0);
 
 }
@@ -298,7 +358,7 @@ void *handle_client(int *new_socket1){
 		strcpy(buffer_choice,"");
 		strcpy(data_buffer,"");
 		read_val = read( new_socket , buffer_choice, BUFFER_SIZE);
-		printf("Service Selected by client %d is : -------- %s\n",authenticated,buffer_choice); 
+		printf("Service Selected by client %d is :  %s\n",authenticated,buffer_choice); 
 		if(strcmp(buffer_choice,"1")==0){
 			echo_request_reply(new_socket);
 		}		
@@ -312,6 +372,7 @@ void *handle_client(int *new_socket1){
 			add_2_numbers(new_socket);
 		}
 		else if(strcmp(buffer_choice,"999")==0){
+			printf("Client %d Exited : Thread Closed\n\n",authenticated);
 			break;
 		}
 

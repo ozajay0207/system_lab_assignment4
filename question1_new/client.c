@@ -39,7 +39,7 @@ int check_auth(int sock){
 		return 0;
 	}
 
-	printf("Client %s Authenticated\n",data_buffer);
+	printf("Client %s Authenticated\n",user_id);
 	return 1;
 }
 
@@ -55,6 +55,9 @@ void echo_request_reply(int sock){
 	
 	//REPEAT UNTIL 'N' FROM USER
 	do{
+
+	
+
 		
 		//TAKE MESSAGE STRING INPUT FROM USER
 		strcpy(mssg_buffer,"");
@@ -175,7 +178,7 @@ void other_services(int sock){
 
 	printf("Other Services\n");
 	while(1){
-		
+
 		strcpy(data_buffer,"");
 		read_val=read(sock,data_buffer,BUFFER_SIZE);	
 		strcpy(service_type,data_buffer);
@@ -186,8 +189,13 @@ void other_services(int sock){
 		}else if(strcmp(service_type,"2")==0){
 			scanf("%s",mssg_buffer);
 			send(sock,mssg_buffer,BUFFER_SIZE,0);
+		}else if(strcmp(service_type,"3")==0){
+			strcpy(data_buffer,"");
+			read_val=read(sock,data_buffer,BUFFER_SIZE);
+			printf("Received:%s\n",data_buffer);		
+			send(sock,data_buffer,BUFFER_SIZE,0);
+			printf("Sending it back...\n\n");
 		}else{
-			printf("Exiting\n");
 			break;
 		}
 	}
@@ -232,26 +240,27 @@ int main(int argc, char const *argv[])
 	//READ THE SERVICES AND DISPLAY IT TO USER
 	strcpy(data_buffer,"");
 	read_val = read( sock , data_buffer, BUFFER_SIZE); 
-	printf("%s\n",data_buffer); 
 
 	//LOOP UNTIL CLIENT QUITS
 	while(1){	
-
+		printf("\n\n%s\n",data_buffer); 
 		//ASK FOR THE SERVICE TYPE
 		printf("Enter a Choice:\n");
 		scanf("%d",&choice);
 		sprintf(choice_str, "%d", choice);
 		send(sock , choice_str , BUFFER_SIZE , 0 ); 	
 		
-		if(choice==999)			
+		if(choice==999){			
+			printf("Exiting and Closing Thread...\n\n");
 			break;
-		
+		}		
+	
 		switch(choice){
 			case 1:
-				echo_request_reply(sock);
+				other_services(sock);
 			break;
 			case 2:
-				AL_RTT(sock);
+				other_services(sock);
 			break;
 			case 3:
 				upload_file(sock);
